@@ -163,7 +163,7 @@ export default function AuthForm({ role, onBack }: AuthFormProps) {
         {/* Return to Explore Link */}
         <div className="flex justify-start">
           <Link 
-            href="/browse" 
+            href="/" 
             className={`flex items-center gap-2 text-sm ${mutedTextClass} hover:opacity-70 transition-opacity`}
           >
             <ArrowLeft className="w-4 h-4" />

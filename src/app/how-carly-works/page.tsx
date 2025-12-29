@@ -129,7 +129,7 @@ export default function HowCarlyWorksPage() {
                 </Button>
               </Link>
             ) : (
-              <Link href="/browse">
+              <Link href="/">
                 <Button size="lg" className="h-14 px-12 text-base">
                   Explore Vehicles
                 </Button>

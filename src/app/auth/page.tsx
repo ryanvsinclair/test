@@ -125,7 +125,7 @@ export default function UnifiedAuthPage() {
       <div className="w-full max-w-md">
         {/* Back Button */}
         <Link
-          href="/browse"
+          href="/"
           className="mb-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

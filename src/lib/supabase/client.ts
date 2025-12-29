@@ -1,37 +1,42 @@
 /**
  * Supabase Client (Browser)
- * 
+ *
  * Single shared Supabase client for browser-side authentication.
- * Used for client-side auth operations only.
- * 
- * CRITICAL: Use ANON_KEY only, never service role key.
+ * MUST use @supabase/supabase-js (NOT @supabase/ssr)
  */
 
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-let supabaseInstance: ReturnType<typeof createBrowserClient> | null = null;
+let supabaseInstance: SupabaseClient | null = null;
 
-export function getSupabaseBrowserClient() {
+export function getSupabaseBrowserClient(): SupabaseClient {
   if (supabaseInstance) {
     return supabaseInstance;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error(
-      '[SUPABASE] Missing environment variables. ' +
-      'Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to project settings.'
+    throw new Error(
+      '[SUPABASE] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY'
     );
-    // Return a mock client that prevents app crashes
-    return null as any;
   }
 
-  supabaseInstance = createBrowserClient(supabaseUrl, supabaseAnonKey);
+  supabaseInstance = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
 
   return supabaseInstance;
 }
 
-// Export alias for compatibility
+// Backward compatibility alias
+export const createClientBrowser = getSupabaseBrowserClient;
+
+// Backward compatibility for older imports
 export const createClient = getSupabaseBrowserClient;

@@ -26,7 +26,7 @@ export default function LoggedOutNav() {
         
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-2 lg:gap-4">
-          <Link href="/browse">
+          <Link href="/">
             <Button variant="ghost" size="sm" className="rounded-lg transition-all hover:scale-105" style={{ transitionDuration: 'var(--motion-base)' }}>
               Browse
             </Button>
@@ -68,7 +68,7 @@ export default function LoggedOutNav() {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md">
           <div className="px-4 py-4 space-y-2">
-            <Link href="/browse" onClick={() => setMobileMenuOpen(false)}>
+            <Link href="/" onClick={() => setMobileMenuOpen(false)}>
               <Button variant="ghost" className="w-full justify-start rounded-lg">
                 Browse
               </Button>

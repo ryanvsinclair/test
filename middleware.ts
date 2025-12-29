@@ -23,7 +23,10 @@ export async function middleware(req: NextRequest) {
     pathname === '/trust-and-safety'
   ) {
     console.log('[MIDDLEWARE] 🟢 Public route, allowing:', pathname)
-    return NextResponse.next()
+    const response = NextResponse.next()
+    // Pass pathname to ServerShell via header
+    response.headers.set('x-pathname', pathname)
+    return response
   }
 
   // 2️⃣ Prepare response FIRST (required for Supabase SSR cookies)
@@ -62,7 +65,8 @@ export async function middleware(req: NextRequest) {
       session.user.user_metadata?.is_admin !== true
     ) {
       console.warn('[MIDDLEWARE] 🔴 Admin access denied, redirecting to /')
-      return NextResponse.redirect(new URL('/', req.url))
+      response = NextResponse.redirect(new URL('/', req.url))
+      return response
     }
 
     console.log('[MIDDLEWARE] 🟢 Admin access granted')
@@ -72,7 +76,8 @@ export async function middleware(req: NextRequest) {
   // 3️⃣ Auth-required routes
   if (!session) {
     console.log('[MIDDLEWARE] 🔴 No session, redirecting to /auth from:', pathname)
-    return NextResponse.redirect(new URL('/auth', req.url))
+    response = NextResponse.redirect(new URL('/auth', req.url))
+    return response
   }
 
   const isAdmin = session.user.user_metadata?.is_admin === true
@@ -89,7 +94,8 @@ export async function middleware(req: NextRequest) {
 
   if (!profile && !isAdmin) {
     console.log('[MIDDLEWARE] 🔴 No profile, redirecting to /auth/account-invalid')
-    return NextResponse.redirect(new URL('/auth/account-invalid', req.url))
+    response = NextResponse.redirect(new URL('/auth/account-invalid', req.url))
+    return response
   }
 
   const role = profile?.role || 'buyer'
@@ -101,7 +107,8 @@ export async function middleware(req: NextRequest) {
     // Non-dealers cannot access
     if (role !== 'dealer') {
       console.log('[MIDDLEWARE] 🔴 Not a dealer, redirecting to /buyer')
-      return NextResponse.redirect(new URL('/buyer', req.url))
+      response = NextResponse.redirect(new URL('/buyer', req.url))
+      return response
     }
     
     // Dealers must have dealership_id
@@ -111,7 +118,8 @@ export async function middleware(req: NextRequest) {
       // Allow access to /dealer/apply only
       if (pathname !== '/dealer/apply') {
         console.log('[MIDDLEWARE] 🔴 Redirecting to /dealer/apply')
-        return NextResponse.redirect(new URL('/dealer/apply', req.url))
+        response = NextResponse.redirect(new URL('/dealer/apply', req.url))
+        return response
       }
       console.log('[MIDDLEWARE] 🟢 Allowing /dealer/apply')
       return response
@@ -129,35 +137,42 @@ export async function middleware(req: NextRequest) {
     // Pending → waiting for admin approval, redirect to home
     if (dealership?.lifecycle_status === 'pending') {
       console.log('[MIDDLEWARE] 🔴 Dealership pending, redirecting to /')
-      return NextResponse.redirect(new URL('/', req.url))
+      response = NextResponse.redirect(new URL('/', req.url))
+      return response
     }
     
     // Approved → must complete onboarding
     if (dealership?.lifecycle_status === 'approved' && pathname !== '/dealer/onboarding') {
       console.log('[MIDDLEWARE] 🔴 Dealership approved, redirecting to /dealer/onboarding')
-      return NextResponse.redirect(new URL('/dealer/onboarding', req.url))
+      response = NextResponse.redirect(new URL('/dealer/onboarding', req.url))
+      return response
     }
     
     // Active → can access portal (but not onboarding)
     if (dealership?.lifecycle_status === 'active' && pathname === '/dealer/onboarding') {
       console.log('[MIDDLEWARE] 🔴 Dealership active, redirecting away from onboarding')
-      return NextResponse.redirect(new URL('/dealer', req.url))
+      response = NextResponse.redirect(new URL('/dealer', req.url))
+      return response
     }
     
     // Rejected → redirect to home
     if (dealership?.lifecycle_status === 'rejected') {
       console.log('[MIDDLEWARE] 🔴 Dealership rejected, redirecting to /')
-      return NextResponse.redirect(new URL('/', req.url))
+      response = NextResponse.redirect(new URL('/', req.url))
+      return response
     }
   }
 
   // 🔐 BUYER ROUTES
   if (pathname.startsWith('/buyer') && role !== 'buyer') {
     console.log('[MIDDLEWARE] 🔴 Not a buyer, redirecting to /dealer from:', pathname)
-    return NextResponse.redirect(new URL('/dealer', req.url))
+    response = NextResponse.redirect(new URL('/dealer', req.url))
+    return response
   }
 
   console.log('[MIDDLEWARE] 🟢 Allowing route:', pathname)
+  // Pass pathname to ServerShell via header
+  response.headers.set('x-pathname', pathname)
   return response
 }
 

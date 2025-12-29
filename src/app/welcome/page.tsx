@@ -39,8 +39,8 @@ export default function WelcomePage() {
     console.log('[WELCOME] 🔵 Enter button clicked');
     setExiting(true);
     setTimeout(() => {
-      console.log('[WELCOME] 🔵 Navigating to /browse');
-      router.replace('/browse');
+      console.log('[WELCOME] 🔵 Navigating to /');
+      router.replace('/');
     }, 500);
   };
 
@@ -74,21 +74,6 @@ export default function WelcomePage() {
   }
 
   console.log('[WELCOME] 🟢 Rendering welcome animation');
-  return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-neutral-300 border-t-neutral-900 dark:border-neutral-700 dark:border-t-neutral-100 rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-neutral-500">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render welcome if not authenticated (redirect will trigger)
-  if (!user) {
-    return null;
-  }
-
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -9,6 +9,7 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { savedVehiclesAPI } from "@/lib/api/saved-vehicles";
@@ -53,6 +54,7 @@ const AuthContext = createContext<AuthState | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // 🔒 Stable Supabase client (NON-NEGOTIABLE)
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
+  const router = useRouter();
 
   // Core state
   const [user, setUser] = useState<User | null>(null);
@@ -95,13 +97,69 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // OPTIONAL enrichment — MUST NEVER BLOCK AUTH
       console.log('[AUTH-CONTEXT] 🔵 Fetching profile...');
-      const { data: profile } = await supabase
+      
+      const profilePromise = supabase
         .from("profiles")
         .select("role, dealership_id, name, verified")
         .eq("id", session.user.id)
-        .maybeSingle();
+        .single();
 
-      console.log('[AUTH-CONTEXT] 🟢 Profile fetched', { role: profile?.role, verified: profile?.verified });
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
+      );
+
+      let profile = null;
+      let profileError = null;
+
+      try {
+        const result = await Promise.race([profilePromise, timeoutPromise]);
+        profile = (result as any).data;
+        profileError = (result as any).error;
+      } catch (err: any) {
+        if (err.message === 'Profile fetch timeout') {
+          console.warn('[AUTH-CONTEXT] 🟡 Profile fetch timeout (3000ms), using fallback');
+        } else {
+          console.warn('[AUTH-CONTEXT] 🟡 Profile query failed (non-blocking):', err.message || err);
+        }
+        profileError = err;
+      }
+
+      if (profileError && profileError.message !== 'Profile fetch timeout') {
+        console.warn('[AUTH-CONTEXT] 🟡 Profile error (non-blocking):', { code: profileError.code, message: profileError.message });
+      }
+
+      // Self-healing: if no profile exists, attempt to create one
+      if (!profile && !profileError) {
+        console.log('[AUTH-CONTEXT] 🟡 No profile found, attempting self-heal...');
+        try {
+          const { error: insertError } = await supabase
+            .from("profiles")
+            .insert({
+              id: session.user.id,
+              role: session.user.user_metadata?.role ?? 'buyer',
+              name: session.user.user_metadata?.full_name ?? session.user.email!.split("@")[0],
+              email: session.user.email
+            })
+            .select()
+            .single();
+
+          if (!insertError) {
+            console.log('[AUTH-CONTEXT] 🟢 Profile self-heal successful');
+            const { data: newProfile } = await supabase
+              .from("profiles")
+              .select("role, dealership_id, name, verified")
+              .eq("id", session.user.id)
+              .maybeSingle();
+            profile = newProfile;
+          } else {
+            console.warn('[AUTH-CONTEXT] 🟡 Profile self-heal failed (non-blocking):', insertError.message);
+          }
+        } catch (healErr) {
+          console.warn('[AUTH-CONTEXT] 🟡 Profile self-heal exception (non-blocking):', healErr);
+        }
+      }
+
+      console.log('[AUTH-CONTEXT] 🟢 Profile fetched', { role: profile?.role, verified: profile?.verified, hasProfile: !!profile });
 
       const role =
         profile?.role ??
@@ -150,10 +208,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let alive = true;
 
     // ⏱ Hard watchdog — app can NEVER hang
+    const watchdogStart = Date.now();
     const watchdog = setTimeout(() => {
-      console.error("[AUTH-CONTEXT] 🔴 Watchdog fired — forcing isLoading=false");
-      if (alive) setIsLoading(false);
-    }, 4000);
+      const elapsed = Date.now() - watchdogStart;
+      console.warn(`[AUTH-CONTEXT] 🟡 Watchdog fired after ${elapsed}ms — forcing isLoading=false`);
+      if (alive) {
+        console.warn('[AUTH-CONTEXT] 🟡 Watchdog context: initial boot phase (non-critical)');
+        setIsLoading(false);
+      }
+    }, 6000);
 
     (async () => {
       try {
@@ -213,6 +276,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     await supabase.auth.signInWithPassword({ email, password });
+    // Trigger server re-render to switch shell
+    router.refresh();
     // onAuthStateChange handles the rest
   };
 
@@ -222,6 +287,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSavedVehicleIds(new Set());
     setIsLoading(false);
+    // Trigger server re-render to switch shell
+    router.refresh();
+    router.replace('/');
   };
 
   const saveVehicle = async (id: string) => {

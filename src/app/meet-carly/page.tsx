@@ -370,7 +370,7 @@ export default function MeetCarlyPage() {
                     Browse with Confidence
                   </Button>
                 </Link>
-                <Link href="/browse">
+                <Link href="/">
                   <Button variant="ghost" size="lg" className="h-14 px-12 text-base">
                     Explore at your own pace
                   </Button>
@@ -378,7 +378,7 @@ export default function MeetCarlyPage() {
               </>
             ) : (
               <>
-                <Link href="/browse">
+                <Link href="/">
                   <Button size="lg" className="h-14 px-12 text-base">
                     Explore Vehicles
                   </Button>

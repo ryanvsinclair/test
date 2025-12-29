@@ -1,11 +1,15 @@
 "use client";
 
-import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 
-export function CarlyFooter() {
-  const { user } = useAuth();
-  const isDealerView = user?.role === 'dealer';
+interface CarlyFooterProps {
+  variant?: 'logged-out' | 'buyer' | 'dealer';
+}
+
+export function CarlyFooter({ variant = 'logged-out' }: CarlyFooterProps) {
+  const isDealerView = variant === 'dealer';
+  const showNavigateSection = variant !== 'dealer';
+  const showAuthenticatedLinks = variant === 'buyer';
 
   return (
     <footer className="bg-gradient-to-b from-neutral-900 to-neutral-950 dark:from-neutral-950 dark:to-black text-neutral-400 mt-auto">
@@ -30,16 +34,16 @@ export function CarlyFooter() {
           </div>
 
           {/* Navigation Shortcuts */}
-          {!isDealerView && (
+          {showNavigateSection && (
             <div className="space-y-4">
               <h3 className="text-xs uppercase tracking-widest text-neutral-500 mb-4">
                 Navigate
               </h3>
               <nav className="space-y-3">
-                <Link href="/browse" className="block text-sm hover:text-neutral-100 transition-colors duration-200">
+                <Link href="/" className="block text-sm hover:text-neutral-100 transition-colors duration-200">
                   Browse
                 </Link>
-                {user && (
+                {showAuthenticatedLinks && (
                   <>
                     <Link href="/buyer/garage" className="block text-sm hover:text-neutral-100 transition-colors duration-200">
                       Saved Vehicles

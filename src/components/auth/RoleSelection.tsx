@@ -15,7 +15,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         {/* Back Button */}
         <div className="flex justify-start">
           <Link 
-            href="/browse" 
+            href="/" 
             className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

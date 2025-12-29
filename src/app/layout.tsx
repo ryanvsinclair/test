@@ -5,7 +5,8 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { UnitsProvider } from "@/contexts/UnitsContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import StateRouter from "@/components/layouts/StateRouter";
+import ServerShell from "@/components/layouts/ServerShell";
+import RouteGuard from "@/components/layouts/RouteGuard";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -23,12 +24,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * Root Layout - Global Theme Shell
+ * Root Layout - Server-Owned Shell
  * 
- * All pages inherit Carly's global gradient theme from this layout.
- * Do not add page-level backgrounds unless intentionally overriding for special cases (modals, dialogs).
+ * Architecture:
+ * - ServerShell (server component) decides which nav/footer to render
+ * - AuthProvider wraps children for client-side interactivity (NOT layout decisions)
+ * - This ensures nav, footer, and page switch atomically on login/logout
  * 
- * The blue → purple gradient is a core brand element and must be visible across all routes.
+ * Auth Authority:
+ * - Server (ServerShell): Layout decisions (nav/footer variants)
+ * - Client (AuthContext): UI interactivity (buttons, save actions, personalization)
  */
 export default function RootLayout({
   children,
@@ -41,9 +46,11 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <UnitsProvider>
-              <StateRouter>
-                {children}
-              </StateRouter>
+              <RouteGuard>
+                <ServerShell>
+                  {children}
+                </ServerShell>
+              </RouteGuard>
             </UnitsProvider>
           </AuthProvider>
         </ThemeProvider>

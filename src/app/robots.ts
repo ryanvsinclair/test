@@ -16,7 +16,6 @@ export default function robots(): MetadataRoute.Robots {
           '/',
           '/cars/',
           '/browse',
-          '/marketplace',
           '/meet-carly',
           '/how-carly-works',
           '/trust-and-safety',

@@ -483,7 +483,7 @@ export default function GaragePage() {
             Browse the marketplace and save vehicles you're interested in
           </p>
           <Button 
-            onClick={() => router.push('/browse')}
+            onClick={() => router.push('/')}
             className="rounded-lg icy-glow-hover"
           >
             Browse Vehicles

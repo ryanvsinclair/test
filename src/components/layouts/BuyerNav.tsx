@@ -11,7 +11,7 @@ import { CarlyLogo } from "@/components/branding/CarlyLogo";
 import { useState } from "react";
 
 const navItems = [
-  { href: "/buyer/browse", label: "Browse", icon: Home },
+  { href: "/", label: "Browse", icon: Home },
   { href: "/buyer/garage", label: "Garage", icon: Heart },
   { href: "/buyer/appointments", label: "Appointments", icon: Calendar },
   { href: "/buyer/messages", label: "Messages", icon: MessageSquare },
@@ -35,7 +35,7 @@ export default function BuyerNav() {
         <div className="hidden lg:flex items-center space-x-1">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || (item.href !== "/buyer/browse" && pathname?.startsWith(item.href + "/"));
+            const isActive = pathname === item.href || (item.href !== "/browse" && pathname?.startsWith(item.href + "/"));
             
             return (
               <Link

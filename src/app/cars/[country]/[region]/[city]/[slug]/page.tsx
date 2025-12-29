@@ -56,7 +56,7 @@ export default function SEOListingPage() {
         <p className="text-muted-foreground mb-8">
           This listing may have been removed or is no longer available.
         </p>
-        <Link href="/browse">
+        <Link href="/">
           <Button>Browse all listings</Button>
         </Link>
       </div>

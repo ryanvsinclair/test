@@ -1,122 +1,34 @@
 /**
  * CANONICAL MARKETPLACE: /browse
  * 
- * This is the single public-facing marketplace for all users.
+ * Instagram-style routing: /browse for everyone, experience adapts to session.
+ * 
  * - Public: Accessible without authentication
  * - SEO-friendly: Listings always visible
- * - Auth-aware UI: Interactions (save, message) require login
- * - Personalization: Applied when authenticated
+ * - Auth-aware UI: Different components rendered based on server session
+ * - No redirects: URL remains /browse regardless of auth state
  * 
- * Architecture decision:
- * - /explore deprecated and redirects here
- * - /buyer/browse deprecated and redirects here
- * - Auth affects UI and ranking, NOT visibility
+ * Architecture:
+ * - Server component detects session
+ * - Logged-out → BrowseLoggedOut (public listings, CTA to sign in)
+ * - Logged-in → BrowseLoggedIn (personalized feed, interactivity)
  */
 
-"use client";
+import { createClient } from '@/lib/supabase/server';
+import BrowseLoggedOut from './BrowseLoggedOut';
+import BrowseLoggedIn from './BrowseLoggedIn';
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { Search, Heart, ArrowUpDown, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
-import { parseNaturalLanguageQuery, criteriaToReadableString, ParsedSearchCriteria } from "@/lib/search/nl-parser";
-import { filterVehicles } from "@/lib/search/vehicle-filter";
-import { VehicleFiltersSheet } from "@/components/filters/VehicleFiltersSheet";
-import { filterHiddenListings } from "@/lib/api/taste-learning";
-import { 
-  sortVehicles, 
-  SortOption, 
-  STANDARD_SORT_OPTIONS 
-} from "@/lib/api/smart-sorting";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-  SelectSeparator,
-} from "@/components/ui/select";
-import { ViewToggle, ViewMode } from "@/components/ui/view-toggle";
-import { ListingsCardGrid } from "@/components/listings/ListingsCardGrid";
-import { ListingsListView } from "@/components/listings/ListingsListView";
-import { getStoredViewMode, setStoredViewMode } from "@/lib/utils/view-mode";
-import { RoadReadinessFilter } from "@/components/marketplace/RoadReadinessFilter";
-import { 
-  RoadReadinessState, 
-  ROAD_READINESS_STATES 
-} from "@/lib/marketplace/roadReadinessStates";
+export default async function BrowsePage() {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
 
-export default function BrowsePage() {
-  const { user, isAuthenticated, isUnauthenticated } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isSearchActive, setIsSearchActive] = useState(false);
-  const [localHiddenIds, setLocalHiddenIds] = useState<string[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('card');
-  
-  // Road Readiness Filter state (default: Carly Verified ON, others OFF)
-  const [showNewInventory, setShowNewInventory] = useState(false);
-  const [showCarlyVerified, setShowCarlyVerified] = useState(true);
-  const [showTheHub, setShowTheHub] = useState(false);
-  const [showBuildersMarket, setShowBuildersMarket] = useState(false);
-  
-  // Pagination state
-  const [pageSize, setPageSize] = useState<15 | 30 | 50>(15);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const listContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Browse page uses standard sorting (personalization applied when authenticated)
-  const [sortOption, setSortOption] = useState<SortOption>('newest-first');
-  
-  // Manual filter state
-  const [manualFilters, setManualFilters] = useState<ParsedSearchCriteria>({});
+  if (!session) {
+    return <BrowseLoggedOut />;
+  }
 
-  // Load view mode from localStorage on mount
-  useEffect(() => {
-    const storedMode = getStoredViewMode();
-    if (storedMode) setViewMode(storedMode);
-    
-    // Load road readiness filter preferences
-    const storedNewInventory = localStorage.getItem('showNewInventory');
-    const storedCarlyVerified = localStorage.getItem('showCarlyVerified');
-    const storedTheHub = localStorage.getItem('showTheHub');
-    const storedBuildersMarket = localStorage.getItem('showBuildersMarket');
-    
-    if (storedNewInventory !== null) setShowNewInventory(storedNewInventory === 'true');
-    if (storedCarlyVerified !== null) setShowCarlyVerified(storedCarlyVerified === 'true');
-    if (storedTheHub !== null) setShowTheHub(storedTheHub === 'true');
-    if (storedBuildersMarket !== null) setShowBuildersMarket(storedBuildersMarket === 'true');
-  }, []);
+  return <BrowseLoggedIn userId={session.user.id} />;
+}
 
-  // Handle view mode change
-  const handleViewModeChange = (mode: ViewMode) => {
-    setViewMode(mode);
-    setStoredViewMode(mode);
-  };
-  
-  // Handle road readiness filter toggle
-  const handleRoadReadinessToggle = (state: RoadReadinessState) => {
-    if (state === ROAD_READINESS_STATES.NEW_INVENTORY) {
-      const newValue = !showNewInventory;
-      setShowNewInventory(newValue);
-      localStorage.setItem('showNewInventory', String(newValue));
-    } else if (state === ROAD_READINESS_STATES.CARLY_VERIFIED) {
-      const newValue = !showCarlyVerified;
-      setShowCarlyVerified(newValue);
-      localStorage.setItem('showCarlyVerified', String(newValue));
-    } else if (state === ROAD_READINESS_STATES.THE_HUB) {
-      const newValue = !showTheHub;
-      setShowTheHub(newValue);
-      localStorage.setItem('showTheHub', String(newValue));
-    } else {
-      const newValue = !showBuildersMarket;
-      setShowBuildersMarket(newValue);
-      localStorage.setItem('showBuildersMarket', String(newValue));
     }
     
     // Reset pagination

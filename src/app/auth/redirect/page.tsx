@@ -2,14 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export default function AuthRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
     const handleRedirect = async () => {
-      const supabase = createClient();
+      const supabase = getSupabaseBrowserClient();
       
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -33,13 +33,13 @@ export default function AuthRedirectPage() {
       // Role-based redirect
       if (profile.role === 'dealer' && profile.dealership_id) {
         // Active dealer
-        router.push('/dealer/dashboard');
+        router.push('/dealer');
       } else if (profile.role === 'dealer' && !profile.dealership_id) {
         // Dealer pending approval
         router.push('/auth/dealer/pending');
       } else {
         // Buyer (default)
-        router.push('/browse');
+        router.push('/');
       }
     };
 

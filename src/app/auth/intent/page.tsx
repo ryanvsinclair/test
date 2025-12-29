@@ -12,7 +12,7 @@ export default function IntentSelectionPage() {
       <div className="w-full max-w-md">
         {/* Back Button */}
         <button
-          onClick={() => router.push('/browse')}
+          onClick={() => router.push('/')}
           className="mb-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -29,7 +29,7 @@ export default function IntentSelectionPage() {
 
           <div className="space-y-3">
             <Button
-              onClick={() => router.push('/browse')}
+              onClick={() => router.push('/')}
               className="w-full h-16 rounded-xl text-left justify-start"
               style={{
                 background: 'linear-gradient(135deg, hsl(var(--accent-primary)), hsl(var(--accent-secondary)))',

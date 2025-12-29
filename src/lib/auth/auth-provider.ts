@@ -76,6 +76,9 @@ export async function signup(params: SignupParams): Promise<{ user: AuthUser | n
       return { user: null, error: 'Signup failed - no user returned' };
     }
 
+    console.log('[AUTH] User created, waiting for profile trigger...');
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     return {
       user: {
         id: data.user.id,

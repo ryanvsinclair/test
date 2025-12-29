@@ -139,7 +139,7 @@ export default function MessagesPage() {
           <p className="text-muted-foreground mb-6">
             Start a conversation by messaging a seller from any listing
           </p>
-          <Link href="/browse">
+          <Link href="/">
             <Button>Browse Vehicles</Button>
           </Link>
         </div>

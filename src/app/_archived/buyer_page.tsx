@@ -7,7 +7,7 @@ export default function BuyerDashboard() {
   const router = useRouter();
   
   useEffect(() => {
-    router.replace('/buyer/browse');
+    router.replace('/');
   }, [router]);
   
   return null;

@@ -1,3 +1,17 @@
+/**
+ * Canonical Listing Detail Page
+ * Route: /listings/[id]
+ * 
+ * NOTE: This is the PRIMARY listing route, NOT a legacy route.
+ * The SEO route /cars/[country]/[region]/[city]/[slug] redirects HERE.
+ * 
+ * Used by:
+ * - Vehicle cards throughout the app
+ * - Buyer messaging
+ * - Direct navigation
+ * - SEO URLs (via redirect from /cars/.../[slug])
+ */
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -282,7 +296,7 @@ export default function ListingDetailPage() {
           <p className="text-muted-foreground mb-8">
             This listing may have been removed or is no longer available.
           </p>
-          <Link href="/browse">
+          <Link href="/">
             <Button>Browse all listings</Button>
           </Link>
         </div>
