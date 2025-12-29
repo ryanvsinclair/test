@@ -1,0 +1,529 @@
+/**
+ * CANONICAL MARKETPLACE: /browse
+ * 
+ * This is the single public-facing marketplace for all users.
+ * - Public: Accessible without authentication
+ * - SEO-friendly: Listings always visible
+ * - Auth-aware UI: Interactions (save, message) require login
+ * - Personalization: Applied when authenticated
+ * 
+ * Architecture decision:
+ * - /explore deprecated and redirects here
+ * - /buyer/browse deprecated and redirects here
+ * - Auth affects UI and ranking, NOT visibility
+ */
+
+"use client";
+
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Search, Heart, ArrowUpDown, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { parseNaturalLanguageQuery, criteriaToReadableString, ParsedSearchCriteria } from "@/lib/search/nl-parser";
+import { filterVehicles } from "@/lib/search/vehicle-filter";
+import { VehicleFiltersSheet } from "@/components/filters/VehicleFiltersSheet";
+import { filterHiddenListings } from "@/lib/api/taste-learning";
+import { 
+  sortVehicles, 
+  SortOption, 
+  STANDARD_SORT_OPTIONS 
+} from "@/lib/api/smart-sorting";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+  SelectSeparator,
+} from "@/components/ui/select";
+import { ViewToggle, ViewMode } from "@/components/ui/view-toggle";
+import { ListingsCardGrid } from "@/components/listings/ListingsCardGrid";
+import { ListingsListView } from "@/components/listings/ListingsListView";
+import { getStoredViewMode, setStoredViewMode } from "@/lib/utils/view-mode";
+import { RoadReadinessFilter } from "@/components/marketplace/RoadReadinessFilter";
+import { 
+  RoadReadinessState, 
+  ROAD_READINESS_STATES 
+} from "@/lib/marketplace/roadReadinessStates";
+
+export default function BrowsePage() {
+  const { user, isAuthenticated, isUnauthenticated } = useAuth();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [localHiddenIds, setLocalHiddenIds] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>('card');
+  
+  // Road Readiness Filter state (default: Carly Verified ON, others OFF)
+  const [showNewInventory, setShowNewInventory] = useState(false);
+  const [showCarlyVerified, setShowCarlyVerified] = useState(true);
+  const [showTheHub, setShowTheHub] = useState(false);
+  const [showBuildersMarket, setShowBuildersMarket] = useState(false);
+  
+  // Pagination state
+  const [pageSize, setPageSize] = useState<15 | 30 | 50>(15);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Browse page uses standard sorting (personalization applied when authenticated)
+  const [sortOption, setSortOption] = useState<SortOption>('newest-first');
+  
+  // Manual filter state
+  const [manualFilters, setManualFilters] = useState<ParsedSearchCriteria>({});
+
+  // Load view mode from localStorage on mount
+  useEffect(() => {
+    const storedMode = getStoredViewMode();
+    if (storedMode) setViewMode(storedMode);
+    
+    // Load road readiness filter preferences
+    const storedNewInventory = localStorage.getItem('showNewInventory');
+    const storedCarlyVerified = localStorage.getItem('showCarlyVerified');
+    const storedTheHub = localStorage.getItem('showTheHub');
+    const storedBuildersMarket = localStorage.getItem('showBuildersMarket');
+    
+    if (storedNewInventory !== null) setShowNewInventory(storedNewInventory === 'true');
+    if (storedCarlyVerified !== null) setShowCarlyVerified(storedCarlyVerified === 'true');
+    if (storedTheHub !== null) setShowTheHub(storedTheHub === 'true');
+    if (storedBuildersMarket !== null) setShowBuildersMarket(storedBuildersMarket === 'true');
+  }, []);
+
+  // Handle view mode change
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    setStoredViewMode(mode);
+  };
+  
+  // Handle road readiness filter toggle
+  const handleRoadReadinessToggle = (state: RoadReadinessState) => {
+    if (state === ROAD_READINESS_STATES.NEW_INVENTORY) {
+      const newValue = !showNewInventory;
+      setShowNewInventory(newValue);
+      localStorage.setItem('showNewInventory', String(newValue));
+    } else if (state === ROAD_READINESS_STATES.CARLY_VERIFIED) {
+      const newValue = !showCarlyVerified;
+      setShowCarlyVerified(newValue);
+      localStorage.setItem('showCarlyVerified', String(newValue));
+    } else if (state === ROAD_READINESS_STATES.THE_HUB) {
+      const newValue = !showTheHub;
+      setShowTheHub(newValue);
+      localStorage.setItem('showTheHub', String(newValue));
+    } else {
+      const newValue = !showBuildersMarket;
+      setShowBuildersMarket(newValue);
+      localStorage.setItem('showBuildersMarket', String(newValue));
+    }
+    
+    // Reset pagination
+    setCurrentPage(1);
+  };
+
+  // Parse search term on blur or Enter
+  const handleSearchBlur = () => {
+    if (!searchTerm.trim()) {
+      setIsSearchActive(false);
+      return;
+    }
+    const parsed = parseNaturalLanguageQuery(searchTerm);
+    setManualFilters(parsed);
+    setIsSearchActive(true);
+  };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setManualFilters({});
+    setIsSearchActive(false);
+  };
+
+  // Merge manual filters
+  const mergedCriteria = useMemo(() => {
+    return { ...manualFilters };
+  }, [manualFilters]);
+
+  // Parse and filter vehicles using merged criteria
+  const filteredVehicles = useMemo(() => {
+    const hasCriteria = Object.keys(mergedCriteria).some(
+      key => key !== 'keywords' && key !== 'mileageUnit' && mergedCriteria[key as keyof typeof mergedCriteria] !== undefined
+    );
+
+    // CRITICAL: ROAD READINESS STATE FILTER
+    // Filter vehicles by selected road readiness states
+    // TODO: Replace with real database query
+    let stateFilteredVehicles: any[] = [];
+    
+    if (!hasCriteria) {
+      // Filter out hidden vehicles if user has refineFeedEnabled
+      let vehicles = stateFilteredVehicles;
+      if (user?.id && user?.preferences?.refineFeedEnabled) {
+        vehicles = filterHiddenListings(user.id, vehicles);
+      }
+      vehicles = vehicles.filter(v => !localHiddenIds.includes(String(v.id)));
+      return vehicles;
+    }
+
+    const userCountry = user?.country || 'CA';
+    const results = filterVehicles(stateFilteredVehicles, mergedCriteria, {
+      city: user?.city,
+      state: user?.state,
+      country: userCountry,
+    });
+
+    let vehicles = results.map(r => r.vehicle);
+    if (user?.id && user?.preferences?.refineFeedEnabled) {
+      vehicles = filterHiddenListings(user.id, vehicles);
+    }
+    vehicles = vehicles.filter(v => !localHiddenIds.includes(String(v.id)));
+    
+    return vehicles;
+  }, [mergedCriteria, localHiddenIds, user, showNewInventory, showCarlyVerified, showTheHub, showBuildersMarket]);
+
+  // Apply sorting - personalization applied only when authenticated
+  const sortedVehicles = useMemo(() => {
+    // Builder's Market uses deterministic sorting ONLY (no personalization)
+    // New Inventory and Carly Verified use separate ranking pools
+    const hasBuilderOnly = showBuildersMarket && !showCarlyVerified && !showTheHub && !showNewInventory;
+    const hasNewOnly = showNewInventory && !showCarlyVerified && !showTheHub && !showBuildersMarket;
+    
+    return sortVehicles(
+      filteredVehicles, 
+      sortOption, 
+      (hasBuilderOnly || hasNewOnly) ? null : (isAuthenticated ? user?.id || null : null)
+    );
+  }, [filteredVehicles, sortOption, user?.id, isAuthenticated, showCarlyVerified, showTheHub, showBuildersMarket, showNewInventory]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedVehicles.length / pageSize);
+  const paginatedVehicles = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return sortedVehicles.slice(startIndex, endIndex);
+  }, [sortedVehicles, currentPage, pageSize]);
+
+  // Reset to page 1 when filters, search, or sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [mergedCriteria, sortOption]);
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize: 15 | 30 | 50) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  // Handle page navigation with smooth transition
+  const handlePageChange = (newPage: number) => {
+    if (isTransitioning || newPage < 1 || newPage > totalPages) return;
+
+    // Check motion preference
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    
+    // 1. Lock container height to prevent layout shift during scroll
+    const listContainer = listContainerRef.current;
+    const originalHeight = listContainer ? listContainer.scrollHeight : null;
+    const originalOverflow = listContainer ? listContainer.style.overflow : null;
+    
+    if (listContainer && originalHeight) {
+      listContainer.style.height = `${originalHeight}px`;
+      listContainer.style.overflow = 'hidden';
+    }
+
+    // 2. IMMEDIATE: Scroll to top BEFORE any state change
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth'
+    });
+
+    // 3. Let scroll animation complete
+    const scrollDuration = prefersReducedMotion ? 0 : 400;
+    
+    setTimeout(() => {
+      setIsTransitioning(true);
+      
+      // 4. Update page data while height is still locked
+      setTimeout(() => {
+        setCurrentPage(newPage);
+        
+        // 5. Wait for render, then unlock height
+        setTimeout(() => {
+          if (listContainer) {
+            listContainer.style.height = '';
+            listContainer.style.overflow = originalOverflow || '';
+          }
+          setIsTransitioning(false);
+        }, 50);
+      }, 50);
+    }, scrollDuration);
+  };
+
+  // Generate criteria text for display
+  const criteriaText = useMemo(() => {
+    const hasCriteria = Object.keys(mergedCriteria).some(
+      key => key !== 'keywords' && key !== 'mileageUnit' && mergedCriteria[key as keyof typeof mergedCriteria] !== undefined
+    );
+    return hasCriteria ? criteriaToReadableString(mergedCriteria) : null;
+  }, [mergedCriteria]);
+
+  const handleVehicleHide = (vehicleId: string) => {
+    setLocalHiddenIds(prev => [...prev, vehicleId]);
+  };
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-b from-muted/30 to-background border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12" ref={contentRef}>
+          <div className="text-center space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-light text-foreground tracking-tight bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent px-4">
+              {isAuthenticated ? "Browse Personalized" : "Browse Vehicles"}
+            </h1>
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
+              {isAuthenticated 
+                ? "Discover vehicles tailored to your preferences and activity"
+                : "Browse thousands of verified listings"}
+            </p>
+          </div>
+
+          {/* Search Bar */}
+          <div className="max-w-3xl mx-auto flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Try: 'Electric SUV under $50k in California'"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onBlur={handleSearchBlur}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchBlur()}
+                className="pl-12 pr-4 h-14 rounded-xl text-base"
+              />
+            </div>
+            <VehicleFiltersSheet
+              filters={manualFilters}
+              onFiltersChange={setManualFilters}
+              userCountry={user?.country || 'CA'}
+            />
+            {isSearchActive && (
+              <Button
+                onClick={handleClearSearch}
+                variant="outline"
+                className="rounded-xl h-14 px-6"
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {/* Smart search indicator */}
+          {criteriaText && (
+            <div className="mt-3 flex items-center gap-2 text-sm justify-center">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20">
+                <Sparkles className="w-3.5 h-3.5 text-accent" />
+                <span className="text-muted-foreground">
+                  Showing results for:{" "}
+                  <span className="font-medium text-foreground">{criteriaText}</span>
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Unauthenticated CTA Banner */}
+          {isUnauthenticated && (
+            <div className="max-w-2xl mx-auto mt-8 p-4 rounded-xl bg-accent/10 border border-accent/20">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'hsl(var(--accent-glow))' }}>
+                  <Heart className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Sign in to save favorites and message sellers</p>
+                  <p className="text-xs text-muted-foreground">Get personalized recommendations and access to exclusive features</p>
+                </div>
+                <Link href="/auth">
+                  <Button size="sm" className="rounded-lg">
+                    Sign In
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* Road Readiness Filter */}
+          <div className="mt-6">
+            <RoadReadinessFilter
+              showNewInventory={showNewInventory}
+              showCarlyVerified={showCarlyVerified}
+              showTheHub={showTheHub}
+              showBuildersMarket={showBuildersMarket}
+              onToggle={handleRoadReadinessToggle}
+            />
+          </div>
+        </div>
+
+        {/* Sort Controls & View Toggle */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="text-sm text-muted-foreground">
+            {sortedVehicles.length} {sortedVehicles.length === 1 ? 'vehicle' : 'vehicles'}
+            {totalPages > 1 && (
+              <span className="ml-2 text-xs">
+                • Page {currentPage} of {totalPages}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <ViewToggle viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+
+            <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+              <SelectTrigger className="flex-1 sm:flex-initial sm:w-[280px] rounded-lg">
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="w-4 h-4" />
+                  <SelectValue placeholder="Sort by..." />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {isAuthenticated && (
+                  <>
+                    {/* Smart Sorting Options - Coming Soon */}
+                    <SelectGroup>
+                      <SelectLabel className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 py-2">
+                        <Sparkles className="w-3 h-3" />
+                        Smart Suggestions
+                      </SelectLabel>
+                      <div className="px-2 py-3 text-sm text-muted-foreground cursor-not-allowed opacity-60">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Personalized sorting coming soon</span>
+                          <span className="text-xs">AI-powered recommendations based on your preferences</span>
+                        </div>
+                      </div>
+                    </SelectGroup>
+                    <SelectSeparator />
+                  </>
+                )}
+
+                {/* Standard Sorting Options */}
+                <SelectGroup>
+                  <SelectLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 py-2">
+                    Standard Sorting
+                  </SelectLabel>
+                  {STANDARD_SORT_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {/* Results */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        {/* Listings with transition effect */}
+        <div 
+          ref={listContainerRef}
+          className="transition-opacity duration-300"
+          style={{ opacity: isTransitioning ? 0.4 : 1 }}
+        >
+          {viewMode === 'card' ? (
+            <ListingsCardGrid
+              vehicles={paginatedVehicles}
+              showSaveButton={isAuthenticated}
+              onHide={handleVehicleHide}
+            />
+          ) : (
+            <ListingsListView
+              vehicles={paginatedVehicles}
+              showSaveButton={isAuthenticated}
+              onHide={handleVehicleHide}
+            />
+          )}
+        </div>
+
+        {sortedVehicles.length === 0 && (
+          <div className="text-center py-16">
+            <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-6 flex items-center justify-center">
+              <Search className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-medium text-foreground mb-2">
+              No vehicles found
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Try adjusting your filters or search terms
+            </p>
+            <Button
+              onClick={handleClearSearch}
+              variant="outline"
+              className="rounded-lg"
+            >
+              Clear all filters
+            </Button>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && sortedVehicles.length > 0 && (
+          <div className="mt-12 space-y-6">
+            {/* Page Size Selector */}
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-sm text-muted-foreground">Show:</span>
+              <div className="flex items-center gap-1">
+                {([15, 30, 50] as const).map((size) => (
+                  <Button
+                    key={size}
+                    onClick={() => handlePageSizeChange(size)}
+                    disabled={isTransitioning}
+                    variant={pageSize === size ? "default" : "outline"}
+                    size="sm"
+                    className="rounded-lg min-w-[60px]"
+                  >
+                    {size}
+                  </Button>
+                ))}
+              </div>
+              <span className="text-sm text-muted-foreground">per page</span>
+            </div>
+
+            {/* Navigation Controls */}
+            <div className="flex items-center justify-center gap-3">
+              <Button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1 || isTransitioning}
+                size="lg"
+                variant="outline"
+                className="rounded-xl h-12 px-6 gap-2"
+                aria-label="Previous page"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Previous
+              </Button>
+
+              <div className="flex items-center justify-center min-w-[140px] px-4 py-3 rounded-xl border border-border bg-card">
+                <span className="text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+              </div>
+
+              <Button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages || isTransitioning}
+                size="lg"
+                variant="outline"
+                className="rounded-xl h-12 px-6 gap-2"
+                aria-label="Next page"
+              >
+                Next
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

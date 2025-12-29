@@ -1,0 +1,891 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Futuristic Apple × Tesla Color System */
+    /* 80-85% white/soft grey base */
+    --background: 0 0% 99%;
+    --foreground: 0 0% 15%;
+    
+    /* Soft grey surfaces */
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+    
+    /* Neutral darks (10-15%) */
+    --primary: 0 0% 20%;
+    --primary-foreground: 0 0% 98%;
+    
+    /* Soft grey secondary */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 20%;
+    
+    /* Muted elements */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 50%;
+    
+    /* Icy blue → soft purple gradient system */
+    --accent-primary: 200 70% 65%; /* Icy blue */
+    --accent-secondary: 270 50% 70%; /* Soft purple */
+    --accent-soft: 220 60% 75%; /* Mid-gradient */
+    --accent-glow: 230 55% 80%; /* Very light blend */
+    --motion-fast: 250ms;
+    --motion-base: 400ms;
+    --motion-slow: 600ms;
+    --motion-delay: 150ms;
+    
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Subtle borders */
+    --border: 0 0% 92%;
+    --input: 0 0% 94%;
+    --ring: 215 20% 65%;
+    
+    /* Soft rounded corners */
+    --radius: 0.75rem;
+    
+    /* Global gradient background (light mode) */
+    --gradient-from: 220 60% 98%;
+    --gradient-to: 270 40% 96%;
+  }
+
+  .dark {
+    /* Modern Dark Mode System — High Contrast + Subtle Accents */
+    
+    /* BACKGROUND LAYERS */
+    --background: 222 47% 7%; /* Near-black with blue undertone (#0B0F14) */
+    --foreground: 210 20% 98%; /* Bright off-white for primary text */
+    
+    /* SURFACE CARDS (Lifted) */
+    --card: 217 33% 11%; /* Lifted dark surface (#121826) */
+    --card-foreground: 210 20% 98%;
+    --popover: 217 33% 13%; /* Elevated modals */
+    --popover-foreground: 210 20% 98%;
+    
+    /* PRIMARY ELEMENTS (High Contrast) */
+    --primary: 210 20% 98%;
+    --primary-foreground: 222 47% 7%;
+    
+    /* SECONDARY SURFACES (Subtle Lift) */
+    --secondary: 217 33% 15%; /* Brighter than cards */
+    --secondary-foreground: 210 20% 98%;
+    
+    /* MUTED ELEMENTS (Readable Secondary Text) */
+    --muted: 217 33% 18%;
+    --muted-foreground: 215 16% 70%; /* Soft neutral gray, still readable */
+    
+    /* ACCENT COLORS (Restrained, Purposeful) */
+    --accent: 199 89% 48%; /* Vibrant blue for CTAs (#0EA5E9) */
+    --accent-foreground: 210 20% 98%;
+    --accent-purple: 270 60% 65%; /* Soft purple for special elements */
+    --accent-primary: 199 89% 48%; /* Primary action color */
+    --accent-secondary: 270 60% 65%;
+    --accent-soft: 200 80% 55%; /* Warranty icons, status tags */
+    --accent-glow: 199 89% 55%; /* Hover glow */
+    
+    /* DESTRUCTIVE (Accessible Red) */
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 210 20% 98%;
+    
+    /* BORDERS & INPUTS (Visible Separation) */
+    --border: 217 33% 22%; /* Clear borders for depth */
+    --input: 217 33% 15%;
+    --ring: 199 89% 48%; /* Focus ring matches accent */
+    
+    /* Global gradient background (dark mode) */
+    --gradient-from: 222 47% 6%;
+    --gradient-to: 260 40% 8%;
+  }
+}
+
+@layer utilities {
+  /* Global Background Gradient - Enforced at root, inherited by all pages */
+  .carly-gradient-bg {
+    background: linear-gradient(to bottom right, hsl(var(--gradient-from)), hsl(var(--gradient-to)));
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  
+  /* Carly Motion System */
+  .motion-smooth {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .motion-fast {
+    transition-duration: 120ms;
+  }
+  
+  .motion-base {
+    transition-duration: 150ms;
+  }
+  
+  .motion-slow {
+    transition-duration: 180ms;
+  }
+  
+  /* Interactive Elements */
+  .btn-lift {
+    @apply transition-all motion-base motion-smooth;
+  }
+  
+  .btn-lift:hover:not(:disabled) {
+    @apply -translate-y-[1px] shadow-md;
+  }
+  
+  .btn-lift:active:not(:disabled) {
+    @apply translate-y-[0.5px] shadow-sm;
+  }
+  
+  .card-lift {
+    @apply transition-all motion-base motion-smooth;
+  }
+  
+  .card-lift:hover {
+    @apply -translate-y-[2px] shadow-lg;
+  }
+  
+  .nav-slide {
+    @apply transition-all motion-base motion-smooth;
+  }
+  
+  .nav-slide:hover {
+    @apply translate-x-[2px];
+  }
+  
+  /* Glow Effects */
+  .glow-blue {
+    @apply transition-shadow motion-base;
+  }
+  
+  .glow-blue:hover {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+  
+  .glow-purple {
+    @apply transition-shadow motion-base;
+  }
+  
+  .glow-purple:hover {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+  }
+  
+  /* Fade Animations */
+  .fade-in {
+    animation: fadeIn 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .fade-in-up {
+    animation: fadeInUp 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Tab content transitions */
+  @keyframes slideInFromRight {
+    from {
+      opacity: 0;
+      transform: translateX(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes slideOutToLeft {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-4px);
+    }
+  }
+  
+  /* Skeleton Shimmer */
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  .skeleton-shimmer {
+    background: linear-gradient(
+      to right,
+      #f5f5f5 0%,
+      #e8e8e8 20%,
+      #f5f5f5 40%,
+      #f5f5f5 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  
+  /* Clean Minimal Scrollbars */
+  .clean-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+  }
+  
+  .clean-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .clean-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .clean-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 999px;
+  }
+  
+  .clean-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.35);
+  }
+  
+  /* Dark Mode Scrollbars */
+  .dark .clean-scrollbar {
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+  
+  .dark .clean-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  .dark .clean-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  
+  .dark .skeleton-shimmer {
+    background: linear-gradient(
+      to right,
+      hsl(217, 33%, 13%) 0%,
+      hsl(217, 33%, 16%) 20%,
+      hsl(217, 33%, 13%) 40%,
+      hsl(217, 33%, 13%) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s linear infinite;
+  }
+  
+  /* Dark Mode Interactive States */
+  .dark .card-lift:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(199, 210, 254, 0.1);
+  }
+  
+  /* PRIMARY ACTION GLOW (Dark Mode Focus) */
+  /* Applied to CTAs, primary buttons, key actions */
+  .primary-glow {
+    position: relative;
+    transition: box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .dark .primary-glow:hover,
+  .dark .primary-glow:focus-visible {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15),
+                0 4px 12px rgba(14, 165, 233, 0.2),
+                0 2px 6px rgba(14, 165, 233, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  .dark .primary-glow:active {
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2),
+                0 2px 8px rgba(14, 165, 233, 0.15);
+    transform: translateY(0);
+  }
+  
+  /* Light mode: subtle shadow only */
+  .primary-glow:hover,
+  .primary-glow:focus-visible {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+  }
+  
+  .primary-glow:active {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    transform: translateY(0);
+  }
+  
+  .dark .glow-blue:hover {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  }
+  
+  .dark .glow-purple:hover {
+    box-shadow: 0 0 0 3px rgba(147, 112, 219, 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Futuristic smooth animations */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 1.5s ease-out var(--motion-delay) backwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp var(--motion-slow) ease-out;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn var(--motion-fast) ease-out;
+  }
+
+  .animate-fade-up {
+    animation: fadeUp var(--motion-slow) ease-out;
+  }
+
+  .animate-stagger-1 {
+    animation: fadeUp var(--motion-slow) ease-out calc(var(--motion-delay) * 0.8) backwards;
+  }
+
+  .animate-stagger-2 {
+    animation: fadeUp var(--motion-slow) ease-out calc(var(--motion-delay) * 1.6) backwards;
+  }
+
+  .animate-stagger-3 {
+    animation: fadeUp var(--motion-slow) ease-out calc(var(--motion-delay) * 2.4) backwards;
+  }
+
+  .animate-stagger-4 {
+    animation: fadeUp var(--motion-slow) ease-out calc(var(--motion-delay) * 3.2) backwards;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 0.4;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .soft-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  }
+  
+  .soft-shadow-lg {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.03);
+  }
+
+  .accent-gradient {
+    background: linear-gradient(90deg, hsl(var(--accent-primary)), hsl(var(--accent-secondary)));
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: gradientShift 20s ease-in-out infinite;
+  }
+
+  .accent-divider {
+    background: linear-gradient(90deg, transparent, hsl(var(--accent-soft)), transparent);
+  }
+
+  /* STEP 1: Micro-depth shadows */
+  .micro-depth {
+    box-shadow: 0 1px 3px rgba(139, 172, 234, 0.08), 0 1px 2px rgba(139, 172, 234, 0.04);
+  }
+
+  .micro-depth-lg {
+    box-shadow: 0 4px 12px rgba(139, 172, 234, 0.1), 0 2px 4px rgba(139, 172, 234, 0.06);
+  }
+
+  /* STEP 2: Subtle gradient motion (zero CPU cost) */
+  @keyframes gradientShift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .gradient-animate {
+    background-size: 200% 200%;
+    animation: gradientShift 20s ease-in-out infinite;
+  }
+
+  /* STEP 3: Interaction-only color */
+  .icy-focus:focus-within {
+    box-shadow: 0 0 0 3px rgba(139, 172, 234, 0.15);
+    border-color: hsl(var(--accent-soft));
+  }
+
+  .icy-hover:hover {
+    box-shadow: 0 0 20px rgba(139, 172, 234, 0.15);
+    border-color: hsl(var(--accent-soft));
+  }
+
+  .icy-glow-hover:hover {
+    box-shadow: 0 4px 16px rgba(139, 172, 234, 0.2), 0 0 24px rgba(186, 164, 234, 0.15);
+  }
+
+  /* Active state gradients (navigation, toggles) */
+  .gradient-underline {
+    position: relative;
+  }
+
+  .gradient-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, hsl(var(--accent-primary)), hsl(var(--accent-secondary)));
+    border-radius: 1px;
+  }
+
+  .gradient-border {
+    border: 1px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(90deg, hsl(var(--accent-primary)), hsl(var(--accent-secondary))) border-box;
+  }
+
+  /* Personalized pill gradient */
+  .personalized-pill {
+    background: linear-gradient(90deg, hsl(var(--accent-primary) / 0.08), hsl(var(--accent-secondary) / 0.08));
+    transition: all var(--motion-base);
+  }
+
+  .personalized-pill:hover {
+    background: linear-gradient(90deg, hsl(var(--accent-primary) / 0.12), hsl(var(--accent-secondary) / 0.12));
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(139, 172, 234, 0.1);
+  }
+
+  /* Status badges with icy tints */
+  .status-pending {
+    background: rgba(250, 204, 21, 0.08);
+    color: rgb(161, 98, 7);
+    border: 1px solid rgba(250, 204, 21, 0.15);
+  }
+
+  .status-confirmed {
+    background: rgba(34, 197, 94, 0.08);
+    color: rgb(22, 101, 52);
+    border: 1px solid rgba(34, 197, 94, 0.15);
+  }
+
+  .status-completed {
+    background: hsl(var(--accent-primary) / 0.08);
+    color: hsl(var(--accent-primary));
+    border: 1px solid hsl(var(--accent-primary) / 0.15);
+  }
+
+  .status-declined, .status-cancelled {
+    background: rgba(239, 68, 68, 0.06);
+    color: rgb(153, 27, 27);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+  }
+
+  /* Active conversation indicator */
+  .conversation-active {
+    position: relative;
+  }
+
+  .conversation-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(180deg, hsl(var(--accent-primary)), hsl(var(--accent-secondary)));
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Verified badge gradient */
+  .verified-badge {
+    background: linear-gradient(135deg, hsl(var(--accent-primary) / 0.1), hsl(var(--accent-secondary) / 0.1));
+    color: hsl(var(--accent-primary));
+    border: 1px solid hsl(var(--accent-primary) / 0.2);
+  }
+
+  /* Heart icon gradient (active state) */
+  .heart-active {
+    background: linear-gradient(135deg, hsl(var(--accent-primary)), hsl(var(--accent-secondary)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Pulse animation for continue buttons */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* STEP 4: Hero atmosphere (optional, very light) */
+  .hero-atmosphere {
+    position: relative;
+  }
+
+  .hero-atmosphere::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 20%, hsl(var(--accent-glow) / 0.04), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-pulse {
+      animation: none;
+    }
+    
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* ===== MESSAGING ENHANCEMENTS (SAFE) ===== */
+  
+  /* Message Entry Animation - Pure CSS */
+  /* ✅ SAFE: No JS state, no ScrollArea refs, CSS-only */
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .message-enter {
+    animation: messageSlideIn 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Typing Indicator Animation - Pure CSS */
+  /* ✅ SAFE: Self-contained animation, no external state */
+  @keyframes typingDot {
+    0%, 60%, 100% {
+      opacity: 0.3;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-4px);
+    }
+  }
+  
+  .typing-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: typingDot 1.4s infinite ease-in-out;
+  }
+  
+  .typing-dot:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  
+  .typing-dot:nth-child(2) {
+    animation-delay: 200ms;
+  }
+  
+  .typing-dot:nth-child(3) {
+    animation-delay: 400ms;
+  }
+
+  /* Chat Background Depth - CSS Gradient */
+  /* ✅ SAFE: Static background, no layout shifts */
+  .chat-background {
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--background)),
+      hsl(var(--muted) / 0.3)
+    );
+  }
+  
+  .dark .chat-background {
+    background: linear-gradient(
+      to bottom,
+      hsl(var(--background)),
+      hsl(217, 33%, 9%)
+    );
+  }
+
+  /* Message Bubble Polish */
+  /* ✅ SAFE: Visual only, no state coupling */
+  .message-bubble {
+    transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .message-bubble:hover {
+    transform: scale(1.01);
+  }
+  
+  .message-bubble-dealer {
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  }
+  
+  .dark .message-bubble-dealer {
+    box-shadow: 0 2px 12px rgba(14, 165, 233, 0.25);
+  }
+  
+  .message-bubble-buyer {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+  
+  .dark .message-bubble-buyer {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Quick Reply Pills - Horizontal Scroll */
+  /* ✅ SAFE: Presentation only, no state dependencies */
+  .quick-replies {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 0.25rem;
+  }
+  
+  .quick-replies::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .quick-reply-pill {
+    flex-shrink: 0;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .quick-reply-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  .dark .quick-reply-pill:hover {
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.2);
+  }
+  
+  .quick-reply-pill:active {
+    transform: scale(0.98);
+  }
+
+  /* Input Focus Polish */
+  /* ✅ SAFE: Standard CSS focus states */
+  .message-input-wrapper {
+    transition: box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                border-color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .message-input-wrapper:focus-within {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: hsl(var(--accent-primary));
+  }
+  
+  .dark .message-input-wrapper:focus-within {
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.15);
+  }
+
+  /* Send Button Tactile Feel */
+  /* ✅ SAFE: Standard button interactions */
+  .send-button {
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .send-button:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  }
+  
+  .dark .send-button:hover:not(:disabled) {
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+  }
+  
+  .send-button:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  /* Context Chips */
+  /* ✅ SAFE: Static UI elements */
+  .context-chip {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-weight: 500;
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .context-chip-intent {
+    background: linear-gradient(90deg, 
+      rgba(34, 197, 94, 0.1), 
+      rgba(34, 197, 94, 0.05)
+    );
+    color: rgb(22, 101, 52);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+  
+  .dark .context-chip-intent {
+    background: linear-gradient(90deg, 
+      rgba(34, 197, 94, 0.15), 
+      rgba(34, 197, 94, 0.08)
+    );
+    color: rgb(134, 239, 172);
+  }
+  
+  .context-chip-inquiry {
+    background: linear-gradient(90deg, 
+      rgba(59, 130, 246, 0.1), 
+      rgba(59, 130, 246, 0.05)
+    );
+    color: rgb(29, 78, 216);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+  
+  .dark .context-chip-inquiry {
+    background: linear-gradient(90deg, 
+      rgba(14, 165, 233, 0.15), 
+      rgba(14, 165, 233, 0.08)
+    );
+    color: rgb(125, 211, 252);
+  }
+}
+
+/* ========================================
+   MESSAGES LAYOUT SYSTEM
+   Decoupled layouts for Dealer vs Buyer
+   ======================================== */
+
+/* Dealer Messages Layout - Full viewport control (Desktop-first) */
+.dealer-messages-layout {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dealer-messages-layout .message-list-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Buyer Messages Layout - Anchored, Contained, Isolated (Mobile-first) */
+.buyer-messages-layout {
+  position: fixed;
+  top: 4rem; /* Top nav */
+  bottom: 0; /* No bottom nav, no footer */
+  left: 0;
+  right: 0;
+  height: calc(100vh - 4rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+}
+
+.buyer-messages-empty {
+  padding-top: 4rem;
+  min-height: 100vh;
+}
+
+/* Mobile adjustments for small screens */
+@media (max-height: 600px) {
+  .buyer-messages-layout {
+    top: 3.5rem;
+    height: calc(100vh - 3.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .buyer-messages-layout {
+    top: 3.5rem;
+    height: calc(100vh - 3.5rem);
+  }
+}
